@@ -49,24 +49,14 @@ pipeline {
             }
         }
         
-        stage('Run JUnit Tests') {
+        stage('Run Unit Tests') {
             steps {
-                echo 'Running JUnit Tests...'
-                script {
-                    try {
-                        sh 'mvn test'
-                        env.JUNIT_TEST_STATUS = 'PASSED'
-                        echo "✓ JUnit Tests: PASSED"
-                    } catch (Exception e) {
-                        env.JUNIT_TEST_STATUS = 'FAILED'
-                        echo "✗ JUnit Tests: FAILED"
-                        currentBuild.result = 'UNSTABLE'
-                    }
-                }
+                // Exclude integration tests to avoid Docker/Postgres errors
+                sh 'mvn test -DskipITs'
             }
             post {
                 always {
-                    junit allowEmptyResults: true, testResults: '**/target/surefire-reports/*.xml'
+                    junit '**/target/surefire-reports/*.xml'
                 }
             }
         }
