@@ -139,142 +139,39 @@ pipeline {
             }
         }
         
-        stage('Generate Test Report & Send to Manager') {
-            steps {
-                script {
-                    // Get test statistics
-                    def testResultAction = currentBuild.rawBuild.getAction(hudson.tasks.junit.TestResultAction.class)
-                    def totalTests = testResultAction ? testResultAction.totalCount : 0
-                    def failedTests = testResultAction ? testResultAction.failCount : 0
-                    def passedTests = totalTests - failedTests
-                    
-                    def testResults = """
-                    <html>
-                    <head>
-                        <style>
-                            body { font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f5f5f5; }
-                            .container { max-width: 800px; margin: 20px auto; background-color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-                            .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; }
-                            .header h2 { margin: 0; font-size: 24px; }
-                            .content { padding: 30px; }
-                            .info-box { background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 15px 0; }
-                            .info-box strong { color: #333; }
-                            .test-item { margin: 15px 0; padding: 20px; border-left: 5px solid #ddd; border-radius: 5px; background-color: #fafafa; }
-                            .passed { border-left-color: #4CAF50; background-color: #f1f8f4; }
-                            .failed { border-left-color: #f44336; background-color: #ffebee; }
-                            .warning { border-left-color: #ff9800; background-color: #fff3e0; }
-                            .test-stats { display: flex; justify-content: space-around; margin: 20px 0; }
-                            .stat-box { text-align: center; padding: 15px; background-color: #f8f9fa; border-radius: 5px; flex: 1; margin: 0 10px; }
-                            .stat-number { font-size: 32px; font-weight: bold; color: #667eea; }
-                            .stat-label { color: #666; font-size: 14px; }
-                            .recommendation { padding: 25px; margin: 25px 0; border-radius: 8px; text-align: center; font-size: 18px; font-weight: bold; }
-                            .ready { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: white; }
-                            .not-ready { background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%); color: white; }
-                            .links { background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0; }
-                            .links a { color: #667eea; text-decoration: none; font-weight: 500; }
-                            .links a:hover { text-decoration: underline; }
-                            .footer { background-color: #2c3e50; color: white; padding: 20px; text-align: center; }
-                            ul { list-style-type: none; padding: 0; }
-                            li { padding: 8px 0; }
-                            li:before { content: "→ "; color: #667eea; font-weight: bold; }
-                        </style>
-                    </head>
-                    <body>
-                        <div class="container">
-                            <div class="header">
-                                <h2>🔔 Merge Request - Code Review Ready</h2>
-                                <p style="margin: 10px 0 0 0; opacity: 0.9;">All automated tests have been completed</p>
-                            </div>
-                            
-                            <div class="content">
-                                <div class="info-box">
-                                    <strong>📋 Project:</strong> Spring PetClinic (${env.JOB_NAME})<br>
-                                    <strong>🔢 Build Number:</strong> #${env.BUILD_NUMBER}<br>
-                                    <strong>🌿 Branch:</strong> main<br>
-                                    <strong>📅 Build Date:</strong> ${new Date().format('yyyy-MM-dd HH:mm:ss')}<br>
-                                    <strong>👤 Triggered By:</strong> ${env.DEVELOPER_EMAIL}
-                                </div>
-                                
-                                <h3 style="color: #2c3e50; border-bottom: 2px solid #667eea; padding-bottom: 10px;">📊 Test Results Summary</h3>
-                                
-                                <div class="test-stats">
-                                    <div class="stat-box">
-                                        <div class="stat-number">${totalTests}</div>
-                                        <div class="stat-label">Total Tests</div>
-                                    </div>
-                                    <div class="stat-box">
-                                        <div class="stat-number" style="color: #4CAF50;">${passedTests}</div>
-                                        <div class="stat-label">Passed</div>
-                                    </div>
-                                    <div class="stat-box">
-                                        <div class="stat-number" style="color: #f44336;">${failedTests}</div>
-                                        <div class="stat-label">Failed</div>
-                                    </div>
-                                </div>
-                                
-                                <div class="test-item ${env.BUILD_STATUS == 'SUCCESS' ? 'passed' : 'failed'}">
-                                    <strong>1️⃣ Build Compilation:</strong> ${env.BUILD_STATUS}<br>
-                                    <small style="color: #666;">Maven build and package creation</small>
-                                </div>
-                                
-                                <div class="test-item ${env.JUNIT_TEST_STATUS == 'PASSED' ? 'passed' : 'failed'}">
-                                    <strong>2️⃣ JUnit Unit Tests:</strong> ${env.JUNIT_TEST_STATUS}<br>
-                                    <small style="color: #666;">${totalTests} tests executed | ${passedTests} passed | ${failedTests} failed</small>
-                                </div>
-                                
-                                <div class="test-item ${env.SONAR_QUALITY_GATE_STATUS == 'PASSED' ? 'passed' : 'failed'}">
-                                    <strong>3️⃣ SonarQube Quality Gate:</strong> ${env.SONAR_QUALITY_GATE_STATUS}<br>
-                                    <small style="color: #666;">Code quality, security, and maintainability analysis</small>
-                                </div>
-                                
-                                <div class="test-item passed">
-                                    <strong>4️⃣ Code Coverage:</strong> GENERATED<br>
-                                    <small style="color: #666;">JaCoCo coverage report available</small>
-                                </div>
-                                
-                                <div class="recommendation ${env.BUILD_STATUS == 'SUCCESS' && env.JUNIT_TEST_STATUS == 'PASSED' && env.SONAR_QUALITY_GATE_STATUS == 'PASSED' ? 'ready' : 'not-ready'}">
-                                    ${env.BUILD_STATUS == 'SUCCESS' && env.JUNIT_TEST_STATUS == 'PASSED' && env.SONAR_QUALITY_GATE_STATUS == 'PASSED' 
-                                        ? '✅ ALL CHECKS PASSED<br><span style="font-size: 16px; font-weight: normal;">Code is ready to merge into main branch</span>' 
-                                        : '⚠️ SOME CHECKS FAILED<br><span style="font-size: 16px; font-weight: normal;">Please review the failed checks before merging</span>'}
-                                </div>
-                                
-                                <div class="links">
-                                    <h3 style="color: #2c3e50; margin-top: 0;">🔗 Detailed Reports</h3>
-                                    <ul>
-                                        <li><a href="${env.BUILD_URL}">Jenkins Build Console</a></li>
-                                        <li><a href="${env.BUILD_URL}testReport/">JUnit Test Report</a></li>
-                                        <li><a href="${env.BUILD_URL}jacoco/">JaCoCo Code Coverage</a></li>
-                                        <li><a href="${env.SONAR_URL}/dashboard?id=spring-petclinic">SonarQube Analysis Dashboard</a></li>
-                                    </ul>
-                                </div>
-                                
-                                <div style="background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; border-radius: 5px;">
-                                    <strong>⏰ Action Required:</strong> Please review the test results and provide your approval decision in Jenkins.
-                                </div>
-                            </div>
-                            
-                            <div class="footer">
-                                <p style="margin: 0;">🤖 Automated CI/CD Pipeline Notification</p>
-                                <p style="margin: 10px 0 0 0; opacity: 0.8; font-size: 12px;">Generated on ${new Date().format('yyyy-MM-dd HH:mm:ss')}</p>
-                            </div>
-                        </div>
-                    </body>
-                    </html>
-                    """
-                    
-                    emailext(
-                        subject: "🔔 [Spring PetClinic] Build #${env.BUILD_NUMBER} - Merge Request Ready ${env.BUILD_STATUS == 'SUCCESS' && env.JUNIT_TEST_STATUS == 'PASSED' && env.SONAR_QUALITY_GATE_STATUS == 'PASSED' ? '✅' : '⚠️'}",
-                        body: testResults,
-                        to: "${env.MANAGER_EMAIL}",
-                        cc: "${env.DEVELOPER_EMAIL}",
-                        mimeType: 'text/html',
-                        attachLog: true
-                    )
-                    
-                    echo "✓ Test report sent to manager: ${env.MANAGER_EMAIL}"
-                }
-            }
+       stage('Generate Test Report & Send to Manager') {
+    steps {
+        script {
+            // Access results from previous junit step via Jenkins environment
+            def totalTests = env.JUNIT_TOTAL ?: 0
+            def failedTests = env.JUNIT_FAILED ?: 0
+            def passedTests = totalTests.toInteger() - failedTests.toInteger()
+            
+            // Build HTML body
+            def testResults = """
+            <html>
+            <body>
+            <h3>JUnit Test Results</h3>
+            <p>Total: ${totalTests}</p>
+            <p>Passed: ${passedTests}</p>
+            <p>Failed: ${failedTests}</p>
+            </body>
+            </html>
+            """
+            
+            // Send email
+            emailext(
+                subject: "Spring PetClinic Build #${env.BUILD_NUMBER} - Test Report",
+                body: testResults,
+                to: "${env.MANAGER_EMAIL}",
+                mimeType: 'text/html'
+            )
+            
+            echo "✓ Test report sent to manager"
         }
+    }
+}
+
         
         stage('Manager Approval for Deployment') {
             steps {
