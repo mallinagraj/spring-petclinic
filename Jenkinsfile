@@ -49,29 +49,29 @@ pipeline {
             }
         }
         
-        stage('Run Unit Tests') {
-            steps {
-                echo 'Running Unit Tests (skipping integration tests)...'
-                script {
-                    try {
-                        // Skip integration tests (*IntegrationTests.java)
-                        sh 'mvn test -DskipITs=true'
-                        env.JUNIT_TEST_STATUS = 'PASSED'
-                        echo "✓ JUnit Tests: PASSED"
-                    } catch (Exception e) {
-                        env.JUNIT_TEST_STATUS = 'FAILED'
-                        echo "✗ JUnit Tests: FAILED"
-                        currentBuild.result = 'UNSTABLE'
-                    }
-                }
-            }
-            post {
-                always {
-                    // Archive unit test results
-                    junit allowEmptyResults: true, testResults: '**/target/surefire-reports/*.xml'
-                }
+       stage('Run Unit Tests') {
+    steps {
+        echo 'Running Unit Tests (excluding integration tests)...'
+        script {
+            try {
+                // Exclude tests matching *IntegrationTests.java
+                sh 'mvn test -Dtest=!**/*IntegrationTests.java'
+                env.JUNIT_TEST_STATUS = 'PASSED'
+                echo "✓ JUnit Tests: PASSED"
+            } catch (Exception e) {
+                env.JUNIT_TEST_STATUS = 'FAILED'
+                echo "✗ JUnit Tests: FAILED"
+                currentBuild.result = 'UNSTABLE'
             }
         }
+    }
+    post {
+        always {
+            junit allowEmptyResults: true, testResults: '**/target/surefire-reports/*.xml'
+        }
+    }
+}
+
         
         stage('Code Coverage Report') {
             steps {
