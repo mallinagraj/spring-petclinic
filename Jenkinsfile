@@ -11,8 +11,8 @@ pipeline {
     }
     
     environment {
-        SONAR_URL = "http://3.110.136.214:9000"
-        ARTIFACTORY_URL = "http://3.109.200.182:8081/artifactory"
+        SONAR_URL = "http://15.207.221.112:9000"
+        ARTIFACTORY_URL = "http://3.110.103.54:8081/artifactory"
         DOCKERHUB_USER = 'jayesh7744'
         IMAGE_NAME = 'spring-petclinic'
         IMAGE_TAG = "${BUILD_NUMBER}"
