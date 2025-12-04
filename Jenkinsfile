@@ -27,7 +27,7 @@ pipeline {
         stage('Checkout') {
             steps {
                 echo 'Cloning GitHub Repo...'
-                git branch: 'main', url: 'https://github.com/mallinagra/spring-projects/spring-petclinic.git'
+                git branch: 'main', url: 'https://github.com/mallinagraj/spring-petclinic.git'
             }
         }
         
