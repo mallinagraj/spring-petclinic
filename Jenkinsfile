@@ -97,10 +97,18 @@ pipeline {
                 env.JUNIT_SKIPPED = result.skipCount.toString()
                 env.JUNIT_PASSED = (result.totalCount - result.failCount - result.skipCount).toString()
                 echo "JUnit Results:"
-                echo "Total: ${env.JUNIT_TOTAL}"
-                echo "Passed: ${env.JUNIT_PASSED}"
-                echo "Failed: ${env.JUNIT_FAILED}"
-                echo "Skipped: ${env.JUNIT_SKIPPED}"
+
+                // Print nicely for email/log
+                echo "✓ JUnit Test Summary:"
+                echo "   Total Tests  : ${env.JUNIT_TOTAL}"
+                echo "   Passed       : ${env.JUNIT_PASSED}"
+                echo "   Failed       : ${env.JUNIT_FAILED}"
+                echo "   Skipped      : ${env.JUNIT_SKIPPED}"
+                
+                // echo "Total: ${env.JUNIT_TOTAL}"
+                // echo "Passed: ${env.JUNIT_PASSED}"
+                // echo "Failed: ${env.JUNIT_FAILED}"
+                // echo "Skipped: ${env.JUNIT_SKIPPED}"
             }
         }
     }
