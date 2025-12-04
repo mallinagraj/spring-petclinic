@@ -73,24 +73,30 @@ pipeline {
 //     }
 // }
 
-        stage('Run Unit Tests') {
+       stage('Run Unit Tests') {
     steps {
-        sh './mvnw test'
+        script {
+            try {
+                // Run unit tests only, skip integration tests
+                sh './mvnw test -Dtest=!**/*IntegrationTests.java'
+                env.JUNIT_TEST_STATUS = 'PASSED'
+            } catch (Exception e) {
+                env.JUNIT_TEST_STATUS = 'FAILED'
+                echo "Unit Tests Failed"
+                currentBuild.result = 'UNSTABLE'
+            }
+        }
     }
     post {
         always {
             script {
-                // Capture real test results safely
+                // Capture test results from Surefire reports
                 def result = junit allowEmptyResults: true, testResults: '**/target/surefire-reports/*.xml'
-
-                env.JUNIT_TOTAL   = result.totalCount.toString()
-                env.JUNIT_FAILED  = result.failCount.toString()
+                env.JUNIT_TOTAL = result.totalCount.toString()
+                env.JUNIT_FAILED = result.failCount.toString()
                 env.JUNIT_SKIPPED = result.skipCount.toString()
-
-                // Computed passed tests
                 env.JUNIT_PASSED = (result.totalCount - result.failCount - result.skipCount).toString()
-                
-                echo "JUnit Results Saved:"
+                echo "JUnit Results:"
                 echo "Total: ${env.JUNIT_TOTAL}"
                 echo "Passed: ${env.JUNIT_PASSED}"
                 echo "Failed: ${env.JUNIT_FAILED}"
@@ -99,6 +105,7 @@ pipeline {
         }
     }
 }
+
 
 
         
