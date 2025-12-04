@@ -182,7 +182,7 @@ pipeline {
                 }
             }
         }
-        
+        //working
 //        stage('Generate Test Report & Send to Manager') {
 //     steps {
 //         script {
@@ -217,15 +217,51 @@ pipeline {
 // }
 
 
+//2nd work
 
+//         stage('Generate Test Report & Send to Manager') {
+//     steps {
+//         script {
+//             def totalTests   = env.JUNIT_TOTAL.toInteger()
+//             def failedTests  = env.JUNIT_FAILED.toInteger()
+//             def skippedTests = env.JUNIT_SKIPPED.toInteger()
+//             def passedTests  = env.JUNIT_PASSED.toInteger()
 
-        stage('Generate Test Report & Send to Manager') {
+//             echo "Using real test results:"
+//             echo "Total: ${totalTests}"
+//             echo "Passed: ${passedTests}"
+//             echo "Failed: ${failedTests}"
+//             echo "Skipped: ${skippedTests}"
+
+//             // your existing big HTML email here
+//             def testReportEmail = """
+//                 <html>
+//                 ...
+//                 <span class="test-value total">${totalTests}</span>
+//                 <span class="test-value passed">${passedTests}</span>
+//                 <span class="test-value failed">${failedTests}</span>
+//                 <span class="test-value skipped">${skippedTests}</span>
+//                 ...
+//                 </html>
+//             """
+
+//             emailext(
+//                 subject: "📊 Spring PetClinic Build #${env.BUILD_NUMBER} - Test Report & Approval Required",
+//                 body: testReportEmail,
+//                 to: env.MANAGER_EMAIL,
+//                 mimeType: 'text/html'
+//             )
+//         }
+//     }
+// }
+
+stage('Generate Test Report & Send to Manager') {
     steps {
         script {
-            def totalTests   = env.JUNIT_TOTAL.toInteger()
-            def failedTests  = env.JUNIT_FAILED.toInteger()
-            def skippedTests = env.JUNIT_SKIPPED.toInteger()
-            def passedTests  = env.JUNIT_PASSED.toInteger()
+            def totalTests   = (env.JUNIT_TOTAL ?: '0').toInteger()
+            def failedTests  = (env.JUNIT_FAILED ?: '0').toInteger()
+            def skippedTests = (env.JUNIT_SKIPPED ?: '0').toInteger()
+            def passedTests  = (env.JUNIT_PASSED ?: '0').toInteger()
 
             echo "Using real test results:"
             echo "Total: ${totalTests}"
@@ -233,15 +269,28 @@ pipeline {
             echo "Failed: ${failedTests}"
             echo "Skipped: ${skippedTests}"
 
-            // your existing big HTML email here
             def testReportEmail = """
                 <html>
-                ...
-                <span class="test-value total">${totalTests}</span>
-                <span class="test-value passed">${passedTests}</span>
-                <span class="test-value failed">${failedTests}</span>
-                <span class="test-value skipped">${skippedTests}</span>
-                ...
+                <head>
+                  <style>
+                    .test-value { font-weight: bold; font-size: 16px; }
+                    .passed { color: green; }
+                    .failed { color: red; }
+                    .skipped { color: orange; }
+                    body { font-family: Arial, sans-serif; }
+                    .report-container { padding: 20px; max-width: 600px; margin: auto; }
+                    h2 { color: #2c3e50; }
+                  </style>
+                </head>
+                <body>
+                  <div class="report-container">
+                    <h2>Spring PetClinic JUnit Test Report</h2>
+                    <p>Total Tests: <span class="test-value total">${totalTests}</span></p>
+                    <p>Passed: <span class="test-value passed">${passedTests}</span></p>
+                    <p>Failed: <span class="test-value failed">${failedTests}</span></p>
+                    <p>Skipped: <span class="test-value skipped">${skippedTests}</span></p>
+                  </div>
+                </body>
                 </html>
             """
 
@@ -254,7 +303,6 @@ pipeline {
         }
     }
 }
-
 
         
         stage('Manager Approval for Deployment') {
