@@ -594,4 +594,11 @@ EOF
                     mimeType: 'text/html'
                 )
             }
-            echo "⚠️ Pipeline aborted - Deployment not approve
+            echo "⚠️ Pipeline aborted - Deployment not approve"
+       }
+             always {
+                 echo "Cleaning workspace..."
+                    cleanWs()
+}
+}
+}
