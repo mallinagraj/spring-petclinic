@@ -50,28 +50,56 @@ pipeline {
             }
         }
         
-       stage('Run Unit Tests') {
+//        stage('Run Unit Tests') {
+//     steps {
+//         echo 'Running Unit Tests (excluding integration tests)...'
+//         script {
+//             try {
+//                 // Exclude tests matching *IntegrationTests.java
+//                 sh 'mvn test -Dtest=!**/*IntegrationTests.java'
+//                 env.JUNIT_TEST_STATUS = 'PASSED'
+//                 echo "✓ JUnit Tests: PASSED"
+//             } catch (Exception e) {
+//                 env.JUNIT_TEST_STATUS = 'FAILED'
+//                 echo "✗ JUnit Tests: FAILED"
+//                 currentBuild.result = 'UNSTABLE'
+//             }
+//         }
+//     }
+//     post {
+//         always {
+//             junit allowEmptyResults: true, testResults: '**/target/surefire-reports/*.xml'
+//         }
+//     }
+// }
+
+        stage('Run Unit Tests') {
     steps {
-        echo 'Running Unit Tests (excluding integration tests)...'
-        script {
-            try {
-                // Exclude tests matching *IntegrationTests.java
-                sh 'mvn test -Dtest=!**/*IntegrationTests.java'
-                env.JUNIT_TEST_STATUS = 'PASSED'
-                echo "✓ JUnit Tests: PASSED"
-            } catch (Exception e) {
-                env.JUNIT_TEST_STATUS = 'FAILED'
-                echo "✗ JUnit Tests: FAILED"
-                currentBuild.result = 'UNSTABLE'
-            }
-        }
+        sh './mvnw test'
     }
     post {
         always {
-            junit allowEmptyResults: true, testResults: '**/target/surefire-reports/*.xml'
+            script {
+                // Capture real test results safely
+                def result = junit allowEmptyResults: true, testResults: '**/target/surefire-reports/*.xml'
+
+                env.JUNIT_TOTAL   = result.totalCount.toString()
+                env.JUNIT_FAILED  = result.failCount.toString()
+                env.JUNIT_SKIPPED = result.skipCount.toString()
+
+                // Computed passed tests
+                env.JUNIT_PASSED = (result.totalCount - result.failCount - result.skipCount).toString()
+                
+                echo "JUnit Results Saved:"
+                echo "Total: ${env.JUNIT_TOTAL}"
+                echo "Passed: ${env.JUNIT_PASSED}"
+                echo "Failed: ${env.JUNIT_FAILED}"
+                echo "Skipped: ${env.JUNIT_SKIPPED}"
+            }
         }
     }
 }
+
 
         
         stage('Code Coverage Report') {
@@ -179,139 +207,39 @@ pipeline {
         stage('Generate Test Report & Send to Manager') {
     steps {
         script {
-            // Get JUnit test results from the current build using the correct API
-            def testResultAction = currentBuild.rawBuild.getAction(hudson.tasks.junit.TestResultAction.class)
-            
-            def totalTests = 0
-            def failedTests = 0
-            def passedTests = 0
-            def skippedTests = 0
-            
-            if (testResultAction != null) {
-                totalTests = testResultAction.totalCount
-                failedTests = testResultAction.failCount
-                skippedTests = testResultAction.skipCount
-                passedTests = totalTests - failedTests - skippedTests
-                
-                echo "Test Results Retrieved:"
-                echo "  Total: ${totalTests}"
-                echo "  Passed: ${passedTests}"
-                echo "  Failed: ${failedTests}"
-                echo "  Skipped: ${skippedTests}"
-            } else {
-                echo "⚠️ No test results found - using default values"
-                totalTests = 0
-                passedTests = 0
-                failedTests = 0
-                skippedTests = 0
-            }
-            
-            // Build HTML email body with enhanced styling
+            def totalTests   = env.JUNIT_TOTAL.toInteger()
+            def failedTests  = env.JUNIT_FAILED.toInteger()
+            def skippedTests = env.JUNIT_SKIPPED.toInteger()
+            def passedTests  = env.JUNIT_PASSED.toInteger()
+
+            echo "Using real test results:"
+            echo "Total: ${totalTests}"
+            echo "Passed: ${passedTests}"
+            echo "Failed: ${failedTests}"
+            echo "Skipped: ${skippedTests}"
+
+            // your existing big HTML email here
             def testReportEmail = """
-            <html>
-            <head>
-                <style>
-                    body { font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f5f5f5; }
-                    .container { max-width: 800px; margin: 20px auto; background-color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border-radius: 8px; }
-                    .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
-                    .content { padding: 30px; }
-                    .test-summary { background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; border: 1px solid #e0e0e0; }
-                    .test-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #eee; align-items: center; }
-                    .test-row:last-child { border-bottom: none; }
-                    .test-label { font-weight: bold; color: #555; font-size: 14px; }
-                    .test-value { font-size: 24px; font-weight: bold; }
-                    .passed { color: #28a745; }
-                    .failed { color: #dc3545; }
-                    .total { color: #007bff; }
-                    .skipped { color: #ffc107; }
-                    .status-box { padding: 15px; margin: 10px 0; border-radius: 5px; border-left: 4px solid; }
-                    .status-success { background-color: #d4edda; border-color: #28a745; color: #155724; }
-                    .status-failed { background-color: #f8d7da; border-color: #dc3545; color: #721c24; }
-                    .status-pending { background-color: #fff3cd; border-color: #ffc107; color: #856404; }
-                    .footer { background-color: #2c3e50; color: white; padding: 20px; text-align: center; border-radius: 0 0 8px 8px; }
-                    .btn { display: inline-block; padding: 12px 24px; background-color: #667eea; color: white; text-decoration: none; border-radius: 5px; margin: 10px 5px; }
-                    h2 { margin: 0; font-size: 24px; }
-                    h3 { color: #2c3e50; margin-top: 25px; margin-bottom: 15px; }
-                </style>
-            </head>
-            <body>
-                <div class="container">
-                    <div class="header">
-                        <h2>🧪 Test Report - Spring PetClinic</h2>
-                        <p style="opacity: 0.9; margin: 10px 0 0 0;">Build #${env.BUILD_NUMBER}</p>
-                    </div>
-                    
-                    <div class="content">
-                        <h3>📊 Test Execution Summary</h3>
-                        
-                        <div class="test-summary">
-                            <div class="test-row">
-                                <span class="test-label">📋 Total Tests:</span>
-                                <span class="test-value total">${totalTests}</span>
-                            </div>
-                            <div class="test-row">
-                                <span class="test-label">✅ Passed:</span>
-                                <span class="test-value passed">${passedTests}</span>
-                            </div>
-                            <div class="test-row">
-                                <span class="test-label">❌ Failed:</span>
-                                <span class="test-value failed">${failedTests}</span>
-                            </div>
-                            <div class="test-row">
-                                <span class="test-label">⊘ Skipped:</span>
-                                <span class="test-value skipped">${skippedTests}</span>
-                            </div>
-                        </div>
-                        
-                        <h3>🔍 Build Status Overview</h3>
-                        
-                        <div class="status-box ${env.BUILD_STATUS == 'SUCCESS' ? 'status-success' : 'status-failed'}">
-                            <strong>🔨 Build Status:</strong> ${env.BUILD_STATUS}
-                        </div>
-                        
-                        <div class="status-box ${env.JUNIT_TEST_STATUS == 'PASSED' ? 'status-success' : (env.JUNIT_TEST_STATUS == 'FAILED' ? 'status-failed' : 'status-pending')}">
-                            <strong>🧪 JUnit Tests:</strong> ${env.JUNIT_TEST_STATUS}
-                        </div>
-                        
-                        <div class="status-box ${env.SONAR_QUALITY_GATE_STATUS == 'PASSED' ? 'status-success' : (env.SONAR_QUALITY_GATE_STATUS.contains('FAILED') ? 'status-failed' : 'status-pending')}">
-                            <strong>🔒 SonarQube Quality Gate:</strong> ${env.SONAR_QUALITY_GATE_STATUS}
-                        </div>
-                        
-                        <h3>📝 Next Steps</h3>
-                        <p style="color: #555; line-height: 1.6;">
-                            Please review the test results above and provide your approval decision in the Jenkins pipeline.
-                            The deployment process is waiting for your approval to proceed.
-                        </p>
-                        
-                        <div style="text-align: center; margin-top: 30px;">
-                            <a href="${env.BUILD_URL}" class="btn">🔍 View Full Build Details</a>
-                            <a href="${env.BUILD_URL}testReport/" class="btn">📊 View Test Report</a>
-                        </div>
-                    </div>
-                    
-                    <div class="footer">
-                        <p style="margin: 0; font-size: 16px;">Jenkins CI/CD Pipeline</p>
-                        <p style="margin: 10px 0 0 0; opacity: 0.8; font-size: 12px;">Build Date: ${new Date().format('yyyy-MM-dd HH:mm:ss')}</p>
-                    </div>
-                </div>
-            </body>
-            </html>
+                <html>
+                ...
+                <span class="test-value total">${totalTests}</span>
+                <span class="test-value passed">${passedTests}</span>
+                <span class="test-value failed">${failedTests}</span>
+                <span class="test-value skipped">${skippedTests}</span>
+                ...
+                </html>
             """
-            
-            // Send email to manager
+
             emailext(
                 subject: "📊 Spring PetClinic Build #${env.BUILD_NUMBER} - Test Report & Approval Required",
                 body: testReportEmail,
-                to: "${env.MANAGER_EMAIL}",
+                to: env.MANAGER_EMAIL,
                 mimeType: 'text/html'
             )
-            
-            echo "✓ Test report sent to manager: ${env.MANAGER_EMAIL}"
-            echo "  Total Tests: ${totalTests}"
-            echo "  Passed: ${passedTests}"
-            echo "  Failed: ${failedTests}"
         }
     }
+}
+
 }
         
         stage('Manager Approval for Deployment') {
