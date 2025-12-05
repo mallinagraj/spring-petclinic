@@ -12,8 +12,8 @@ pipeline {
     }
     
     environment {
-        SONAR_URL = "http://15.207.221.112:9000"
-        ARTIFACTORY_URL = "http://3.110.103.54:8081/artifactory"
+        SONAR_URL = "http://13.203.66.66:9000"
+        ARTIFACTORY_URL = "http://13.233.122.41:8081/artifactory"
         DOCKERHUB_USER = 'jayesh7744'
         IMAGE_NAME = 'spring-petclinic'
         IMAGE_TAG = "${BUILD_NUMBER}"
@@ -397,12 +397,12 @@ Proceed with deployment anyway?
                             # Upload JAR file directly to Artifactory using cURL
                             curl -v -u ${JFROG_USER}:${JFROG_PASSWORD} \
                                  -X PUT \
-                                 "http://3.110.103.54:8081/artifactory/libs-release-local/${JAR_NAME}" \
+                                 "http://13.233.122.41:8081/artifactory/libs-release-local/${JAR_NAME}" \
                                  -T $JAR_FILE
                             
                             if [ $? -eq 0 ]; then
                                 echo "✓ Successfully uploaded JAR to Artifactory"
-                                echo "Artifact URL: http://3.110.103.54:8081/artifactory/libs-release-local/${JAR_NAME}"
+                                echo "Artifact URL: http://13.233.122.41:8081/artifactory/libs-release-local/${JAR_NAME}"
                             else
                                 echo "✗ Failed to upload JAR to Artifactory"
                                 exit 1
@@ -527,7 +527,7 @@ EOF
                                 <h3 style="color: #2c3e50;">🔗 Quick Links</h3>
                                 <ul style="list-style: none; padding: 0;">
                                     <li style="padding: 5px 0;">→ <a href="${env.BUILD_URL}">Jenkins Build</a></li>
-                                    <li style="padding: 5px 0;">→ <a href="http://3.110.103.54:8081/artifactory/libs-release-local/">JFrog Artifactory</a></li>
+                                    <li style="padding: 5px 0;">→ <a href="http://13.233.122.41:8081/artifactory/libs-release-local/">JFrog Artifactory</a></li>
                                     <li style="padding: 5px 0;">→ <a href="https://hub.docker.com/r/${DOCKERHUB_USER}/${IMAGE_NAME}">DockerHub Repository</a></li>
                                 </ul>
                             </div>
