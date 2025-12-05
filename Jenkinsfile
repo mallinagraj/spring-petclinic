@@ -50,28 +50,6 @@ pipeline {
             }
         }
         
-//        stage('Run Unit Tests') {
-//     steps {
-//         echo 'Running Unit Tests (excluding integration tests)...'
-//         script {
-//             try {
-//                 // Exclude tests matching *IntegrationTests.java
-//                 sh 'mvn test -Dtest=!**/*IntegrationTests.java'
-//                 env.JUNIT_TEST_STATUS = 'PASSED'
-//                 echo "✓ JUnit Tests: PASSED"
-//             } catch (Exception e) {
-//                 env.JUNIT_TEST_STATUS = 'FAILED'
-//                 echo "✗ JUnit Tests: FAILED"
-//                 currentBuild.result = 'UNSTABLE'
-//             }
-//         }
-//     }
-//     post {
-//         always {
-//             junit allowEmptyResults: true, testResults: '**/target/surefire-reports/*.xml'
-//         }
-//     }
-// }
 
        stage('Run Unit Tests') {
     steps {
@@ -105,10 +83,7 @@ pipeline {
                 echo "   Failed       : ${env.JUNIT_FAILED}"
                 echo "   Skipped      : ${env.JUNIT_SKIPPED}"
                 
-                // echo "Total: ${env.JUNIT_TOTAL}"
-                // echo "Passed: ${env.JUNIT_PASSED}"
-                // echo "Failed: ${env.JUNIT_FAILED}"
-                // echo "Skipped: ${env.JUNIT_SKIPPED}"
+            
             }
         }
     }
@@ -182,78 +157,6 @@ pipeline {
                 }
             }
         }
-        //working
-//        stage('Generate Test Report & Send to Manager') {
-//     steps {
-//         script {
-//             // Access results from previous junit step via Jenkins environment
-//             def totalTests = env.JUNIT_TOTAL ?: 0
-//             def failedTests = env.JUNIT_FAILED ?: 0
-//             def passedTests = totalTests.toInteger() - failedTests.toInteger()
-            
-//             // Build HTML body
-//             def testResults = """
-//             <html>
-//             <body>
-//             <h3>JUnit Test Results</h3>
-//             <p>Total: ${totalTests}</p>
-//             <p>Passed: ${passedTests}</p>
-//             <p>Failed: ${failedTests}</p>
-//             </body>
-//             </html>
-//             """
-            
-//             // Send email
-//             emailext(
-//                 subject: "Spring PetClinic Build #${env.BUILD_NUMBER} - Test Report",
-//                 body: testResults,
-//                 to: "${env.MANAGER_EMAIL}",
-//                 mimeType: 'text/html'
-//             )
-            
-//             echo "✓ Test report sent to manager"
-//         }
-//     }
-// }
-
-
-//2nd work
-
-//         stage('Generate Test Report & Send to Manager') {
-//     steps {
-//         script {
-//             def totalTests   = env.JUNIT_TOTAL.toInteger()
-//             def failedTests  = env.JUNIT_FAILED.toInteger()
-//             def skippedTests = env.JUNIT_SKIPPED.toInteger()
-//             def passedTests  = env.JUNIT_PASSED.toInteger()
-
-//             echo "Using real test results:"
-//             echo "Total: ${totalTests}"
-//             echo "Passed: ${passedTests}"
-//             echo "Failed: ${failedTests}"
-//             echo "Skipped: ${skippedTests}"
-
-//             // your existing big HTML email here
-//             def testReportEmail = """
-//                 <html>
-//                 ...
-//                 <span class="test-value total">${totalTests}</span>
-//                 <span class="test-value passed">${passedTests}</span>
-//                 <span class="test-value failed">${failedTests}</span>
-//                 <span class="test-value skipped">${skippedTests}</span>
-//                 ...
-//                 </html>
-//             """
-
-//             emailext(
-//                 subject: "📊 Spring PetClinic Build #${env.BUILD_NUMBER} - Test Report & Approval Required",
-//                 body: testReportEmail,
-//                 to: env.MANAGER_EMAIL,
-//                 mimeType: 'text/html'
-//             )
-//         }
-//     }
-// }
 
 stage('Generate Test Report & Send to Manager') {
     steps {
