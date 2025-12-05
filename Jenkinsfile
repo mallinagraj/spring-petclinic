@@ -5,7 +5,6 @@ pipeline {
         skipDefaultCheckout()
     }
     
-
     tools {
         maven 'maven3'
         jdk 'jdk17'  // Spring PetClinic requires Java 17
