@@ -300,12 +300,12 @@ Proceed with deployment anyway?
                             # Upload JAR file directly to Artifactory using cURL
                             curl -v -u ${JFROG_USER}:${JFROG_PASSWORD} \
                                  -X PUT \
-                                 "http://13.233.122.41:8081/artifactory/libs-release-local/${JAR_NAME}" \
+                                 "http://13.233.122.41:8081/artifactory/local/${JAR_NAME}" \
                                  -T $JAR_FILE
                             
                             if [ $? -eq 0 ]; then
                                 echo "✓ Successfully uploaded JAR to Artifactory"
-                                echo "Artifact URL: http://13.233.122.41:8081/artifactory/libs-release-local/${JAR_NAME}"
+                                echo "Artifact URL: http://13.233.122.41:8081/artifactory/local/${JAR_NAME}"
                             else
                                 echo "✗ Failed to upload JAR to Artifactory"
                                 exit 1
@@ -410,7 +410,7 @@ EOF
                                 <div class="artifact-box">
                                     <strong>✅ JAR Artifact</strong><br>
                                     <small>Uploaded to JFrog Artifactory</small><br>
-                                    <code>libs-release-local/spring-petclinic-*.jar</code>
+                                    <code>local/spring-petclinic-*.jar</code>
                                 </div>
                                 
                                 <div class="artifact-box">
@@ -430,7 +430,7 @@ EOF
                                 <h3 style="color: #2c3e50;">🔗 Quick Links</h3>
                                 <ul style="list-style: none; padding: 0;">
                                     <li style="padding: 5px 0;">→ <a href="${env.BUILD_URL}">Jenkins Build</a></li>
-                                    <li style="padding: 5px 0;">→ <a href="http://13.233.122.41:8081/artifactory/libs-release-local/">JFrog Artifactory</a></li>
+                                    <li style="padding: 5px 0;">→ <a href="http://13.233.122.41:8081/artifactory/local/">JFrog Artifactory</a></li>
                                     <li style="padding: 5px 0;">→ <a href="https://hub.docker.com/r/${DOCKERHUB_USER}/${IMAGE_NAME}">DockerHub Repository</a></li>
                                 </ul>
                             </div>
